@@ -109,8 +109,8 @@ export const api = {
   compareSuppliers: ids => request(`/api/suppliers/compare?ids=${encodeURIComponent(ids.join(','))}`),
   supplierTrends: () => request('/api/suppliers/trends'),
   supplierAnomalies: () => request('/api/suppliers/anomalies'),
-  sampleDatasets: () => request('/api/suppliers/sample-datasets'),
-  downloadSampleDataset: (filename) => downloadFile(`/api/suppliers/sample-datasets/${encodeURIComponent(filename)}`),
+  sampleDatasets: () => fetch(BASE + '/api/suppliers/sample-datasets').then(r => r.ok ? r.json() : Promise.reject(new Error(r.statusText))),
+  downloadSampleDataset: (filename) => fetch(BASE + `/api/suppliers/sample-datasets/${encodeURIComponent(filename)}`).then(r => r.ok ? r.blob() : Promise.reject(new Error(r.statusText))),
 
   getScenarios: () => request('/api/scenarios'),
   createScenario: body => request('/api/scenarios', { method: 'POST', body: JSON.stringify(body) }),

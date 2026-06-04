@@ -57,14 +57,14 @@ supplier_router = APIRouter(prefix="/api/suppliers", tags=["suppliers"])
 
 
 @supplier_router.get("/sample-datasets")
-async def list_sample_datasets(current_user: dict = Depends(auth.require_auth)):
-    """Return the catalogue of DisruptIQ sample datasets available for download."""
+async def list_sample_datasets():
+    """Return the catalogue of DisruptIQ sample datasets. Public — no auth required."""
     return {"datasets": SAMPLE_DATASETS}
 
 
 @supplier_router.get("/sample-datasets/{filename}")
-async def download_sample_dataset(filename: str, current_user: dict = Depends(auth.require_auth)):
-    """Stream a sample dataset .xlsx file for the authenticated user to download."""
+async def download_sample_dataset(filename: str, request: Request):
+    """Stream a sample dataset .xlsx file. Public — no auth required for download."""
     # Guard against path traversal
     if "/" in filename or "\\" in filename or ".." in filename:
         raise HTTPException(status_code=400, detail="Invalid filename")
@@ -73,15 +73,22 @@ async def download_sample_dataset(filename: str, current_user: dict = Depends(au
         raise HTTPException(status_code=404, detail="Sample dataset not found")
     file_path = _DATASET_DIR / filename
     if not file_path.exists():
+        logger.warning("Sample dataset file missing on server: %s (looked in %s)", filename, _DATASET_DIR)
         raise HTTPException(status_code=404, detail="Dataset file not available on this server")
-    storage.write_audit(
-        event_id=f"sample_dataset_{current_user.get('client_id')}",
-        agent="OnboardingSystem",
-        action="sample_dataset_downloaded",
-        input_summary=filename,
-        output_summary=f"industry={matched['industry']} count={matched['supplier_count']}",
-        client_id=current_user.get("client_id"),
-    )
+    # Best-effort audit log — only when caller is authenticated
+    try:
+        user = await auth.get_optional_user(request)
+        if user:
+            storage.write_audit(
+                event_id=f"sample_dataset_{user.get('client_id')}",
+                agent="OnboardingSystem",
+                action="sample_dataset_downloaded",
+                input_summary=filename,
+                output_summary=f"industry={matched['industry']} count={matched['supplier_count']}",
+                client_id=user.get("client_id"),
+            )
+    except Exception:
+        pass
     return StreamingResponse(
         open(file_path, "rb"),
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
