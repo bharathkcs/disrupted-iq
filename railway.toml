@@ -1,0 +1,13 @@
+[build]
+builder = "nixpacks"
+
+[build.nixpacks]
+# Explicit Python version
+providers = ["python"]
+
+[env]
+# Python path needs to include backend directory
+PYTHONPATH = "/app"
+
+[start]
+cmd = "python main.py"
