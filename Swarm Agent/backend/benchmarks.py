@@ -30,8 +30,32 @@ logger = logging.getLogger("disruptiq.benchmarks")
 
 # Resolve dataset directory. Default points at the repo's e:/Swarm/dataset
 # layout; override with DATASET_PATH env var.
-_REPO_ROOT = Path(__file__).resolve().parents[2]   # ...\Swarm
-DATASET_DIR = Path(os.getenv("DATASET_PATH") or (_REPO_ROOT / "dataset"))
+# In Railway, files are in /app, so parents[2] doesn't exist.
+# Fall back to looking for dataset in standard locations or via env var.
+def _resolve_dataset_dir():
+    if os.getenv("DATASET_PATH"):
+        return Path(os.getenv("DATASET_PATH"))
+
+    file_path = Path(__file__).resolve()
+
+    # Try: parent/parent/dataset (local dev: .../Swarm Agent/backend/benchmarks.py)
+    if (file_path.parents[1] / ".." / "dataset").exists():
+        return (file_path.parents[1] / ".." / "dataset").resolve()
+
+    # Try: parent/dataset (Railway: /app/dataset if copied during build)
+    if (file_path.parent / "dataset").exists():
+        return file_path.parent / "dataset"
+
+    # Try: siblings or common locations
+    for parent_count in range(5):
+        candidate = file_path.parents[parent_count] / "dataset"
+        if candidate.exists():
+            return candidate
+
+    # Fallback: return default path (won't crash, will just log warning if datasets not found)
+    return file_path.parent / "dataset"
+
+DATASET_DIR = _resolve_dataset_dir()
 
 EXPECTED_COLUMNS = (
     "Supplier Name", "Zone", "Categories",
