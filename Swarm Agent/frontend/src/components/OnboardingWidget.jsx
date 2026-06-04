@@ -1,5 +1,159 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { api } from '../services/api.js'
+
+const INDUSTRY_ICONS = {
+  'Automotive': '🚗', 'Electronics': '💡', 'Pharmaceutical': '💊',
+  'FMCG': '🛒', 'Aerospace': '✈️', 'Renewable Energy': '🌱',
+  'Food & Beverage': '🍎', 'Chemicals': '⚗️', 'Logistics / 3PL': '🚚',
+  'Medical Devices': '🩺',
+}
+
+function SampleDatasetModal({ onClose }) {
+  const [datasets, setDatasets] = useState(null)
+  const [downloading, setDownloading] = useState(null)
+  const [dlError, setDlError] = useState(null)
+
+  useEffect(() => {
+    api.sampleDatasets()
+      .then(res => setDatasets(res.datasets || []))
+      .catch(() => setDlError('Could not load sample datasets. Please try again.'))
+  }, [])
+
+  const handleDownload = useCallback(async (ds) => {
+    setDownloading(ds.filename)
+    setDlError(null)
+    try {
+      const blob = await api.downloadSampleDataset(ds.filename)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = ds.filename
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    } catch {
+      setDlError(`Download failed for "${ds.filename}". Please try again.`)
+    } finally {
+      setDownloading(null)
+    }
+  }, [])
+
+  return (
+    <div
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9999,
+        background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(4px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '16px',
+      }}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div style={{
+        background: '#111827', border: '1px solid rgba(124,107,255,0.3)',
+        borderRadius: 16, width: '100%', maxWidth: 760,
+        maxHeight: '88vh', display: 'flex', flexDirection: 'column',
+        boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
+      }}>
+        {/* Header */}
+        <div style={{
+          padding: '18px 22px', borderBottom: '1px solid rgba(255,255,255,0.07)',
+          display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12,
+        }}>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#fff', marginBottom: 4 }}>
+              Sample Supplier Datasets
+            </div>
+            <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.45)', lineHeight: 1.5 }}>
+              Download any dataset below, then upload it to your account to explore the full DisruptIQ experience — no proprietary data required.
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              flexShrink: 0, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+              color: 'rgba(255,255,255,0.5)', borderRadius: 8, width: 32, height: 32,
+              cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >✕</button>
+        </div>
+
+        {/* Body */}
+        <div style={{ overflowY: 'auto', padding: '16px 22px', flex: 1 }}>
+          {dlError && (
+            <div style={{
+              background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.35)',
+              color: '#fca5a5', padding: '10px 14px', borderRadius: 8, marginBottom: 14, fontSize: 12.5,
+            }}>⚠️ {dlError}</div>
+          )}
+          {!datasets && !dlError && (
+            <div style={{ textAlign: 'center', padding: '40px 0', color: 'rgba(255,255,255,0.35)', fontSize: 13 }}>
+              Loading datasets…
+            </div>
+          )}
+          {datasets && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 12 }}>
+              {datasets.map(ds => {
+                const icon = INDUSTRY_ICONS[ds.industry] || '📦'
+                const isBusy = downloading === ds.filename
+                return (
+                  <div key={ds.id} style={{
+                    background: 'rgba(124,107,255,0.05)', border: '1px solid rgba(124,107,255,0.18)',
+                    borderRadius: 12, padding: '14px 16px',
+                    display: 'flex', flexDirection: 'column', gap: 10,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{
+                        width: 36, height: 36, borderRadius: 9, flexShrink: 0,
+                        background: 'rgba(124,107,255,0.14)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
+                      }}>{icon}</span>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#e8e8ff' }}>{ds.industry}</div>
+                        <div style={{ display: 'flex', gap: 6, marginTop: 3, flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: 10.5, color: '#2dd4bf', background: 'rgba(45,212,191,0.1)', padding: '1px 7px', borderRadius: 10, fontWeight: 600 }}>{ds.geography}</span>
+                          <span style={{ fontSize: 10.5, color: '#a78bfa', background: 'rgba(167,139,250,0.1)', padding: '1px 7px', borderRadius: 10, fontWeight: 600 }}>{ds.supplier_count} suppliers</span>
+                        </div>
+                      </div>
+                    </div>
+                    <p style={{ margin: 0, fontSize: 11.5, color: 'rgba(255,255,255,0.42)', lineHeight: 1.55 }}>
+                      {ds.description}
+                    </p>
+                    <button
+                      onClick={() => handleDownload(ds)}
+                      disabled={!!downloading}
+                      style={{
+                        marginTop: 2, padding: '8px 0', borderRadius: 8, border: 'none',
+                        cursor: downloading ? 'not-allowed' : 'pointer',
+                        background: isBusy
+                          ? 'rgba(124,107,255,0.25)'
+                          : 'linear-gradient(90deg, #7c6bff, #2dd4bf)',
+                        color: '#fff', fontSize: 12, fontWeight: 700, letterSpacing: '0.02em',
+                        opacity: downloading && !isBusy ? 0.45 : 1,
+                        transition: 'opacity 0.2s',
+                      }}
+                    >
+                      {isBusy ? 'Downloading…' : '⬇  Download Dataset'}
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Footer hint */}
+        <div style={{
+          padding: '12px 22px', borderTop: '1px solid rgba(255,255,255,0.07)',
+          fontSize: 11, color: 'rgba(255,255,255,0.28)', lineHeight: 1.5,
+        }}>
+          These datasets are provided for evaluation purposes only. After downloading, upload via the{' '}
+          <strong style={{ color: 'rgba(255,255,255,0.45)' }}>Upload Suppliers</strong> button on your dashboard.
+        </div>
+      </div>
+    </div>
+  )
+}
 
 const DISMISS_KEY = 'disruptiq_onboarding_done'
 
@@ -67,6 +221,7 @@ export default function OnboardingWidget() {
   const [checklist, setChecklist] = useState(null)
   const [dismissed, setDismissed] = useState(() => !!localStorage.getItem(DISMISS_KEY))
   const [exiting, setExiting] = useState(false)
+  const [showSampleModal, setShowSampleModal] = useState(false)
 
   useEffect(() => {
     if (dismissed) return
@@ -182,6 +337,30 @@ export default function OnboardingWidget() {
         </div>
       </div>
 
+      {/* Sample dataset banner */}
+      <div style={{
+        padding: '10px 16px',
+        borderTop: '1px solid rgba(255,255,255,0.05)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+        background: 'rgba(45,212,191,0.04)',
+      }}>
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', lineHeight: 1.4 }}>
+          <span style={{ fontWeight: 600, color: 'rgba(255,255,255,0.6)' }}>No supplier data yet?</span>{' '}
+          We've prepared 10 industry-specific datasets so you can start exploring right away.
+        </div>
+        <button
+          onClick={() => setShowSampleModal(true)}
+          style={{
+            flexShrink: 0, padding: '6px 14px', borderRadius: 8,
+            background: 'linear-gradient(90deg, #7c6bff, #2dd4bf)',
+            border: 'none', color: '#fff', fontSize: 11, fontWeight: 700,
+            cursor: 'pointer', whiteSpace: 'nowrap',
+          }}
+        >
+          Browse Datasets
+        </button>
+      </div>
+
       {/* Progress bar at bottom */}
       <div style={{ height: 3, background: 'rgba(255,255,255,0.05)' }}>
         <div style={{
@@ -191,6 +370,8 @@ export default function OnboardingWidget() {
           boxShadow: '0 0 8px rgba(124,107,255,0.5)',
         }} />
       </div>
+
+      {showSampleModal && <SampleDatasetModal onClose={() => setShowSampleModal(false)} />}
     </div>
   )
 }

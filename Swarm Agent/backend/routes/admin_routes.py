@@ -138,6 +138,7 @@ async def admin_users(current_user: dict = Depends(auth.require_admin)):
             "is_admin": auth.is_admin_email(owner_email),
             "suspended": bool(c.get("suspended")),
             "premium": bool(c.get("premium")),
+            "used_sample_dataset": bool(c.get("used_sample_dataset")),
         })
     rows.sort(key=lambda r: (r.get("created_at") or ""), reverse=True)
     return {"total": len(rows), "users": rows}

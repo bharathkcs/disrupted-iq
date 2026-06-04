@@ -17,6 +17,7 @@ import logging
 import random
 import secrets
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment
@@ -31,9 +32,61 @@ import financial_signals
 import storage
 from models import SupplierInput, BulkDeleteRequest
 
+# Resolve dataset directory relative to this file: backend/ -> Swarm Agent/ -> Swarm/ -> dataset/
+_BACKEND_DIR = Path(__file__).resolve().parent.parent
+_DATASET_DIR = _BACKEND_DIR.parent / "dataset"
+
+SAMPLE_DATASETS = [
+    {"id": "01", "filename": "01_Automotive_Global_25_suppliers.xlsx",       "industry": "Automotive",       "geography": "Global", "supplier_count": 25, "description": "Tier-1 and Tier-2 automotive parts suppliers across North America, Europe, and Asia."},
+    {"id": "02", "filename": "02_Electronics_Global_35_suppliers.xlsx",      "industry": "Electronics",      "geography": "Global", "supplier_count": 35, "description": "Semiconductor, PCB, and consumer electronics component suppliers worldwide."},
+    {"id": "03", "filename": "03_Pharma_India_18_suppliers.xlsx",            "industry": "Pharmaceutical",   "geography": "India",  "supplier_count": 18, "description": "Active Pharmaceutical Ingredient (API) and excipient suppliers across India."},
+    {"id": "04", "filename": "04_FMCG_Mixed_40_suppliers.xlsx",              "industry": "FMCG",             "geography": "Mixed",  "supplier_count": 40, "description": "Fast-moving consumer goods suppliers spanning packaging, ingredients, and logistics."},
+    {"id": "05", "filename": "05_Aerospace_Global_22_suppliers.xlsx",        "industry": "Aerospace",        "geography": "Global", "supplier_count": 22, "description": "Aerospace-grade components, avionics, and MRO suppliers with defence-grade reliability data."},
+    {"id": "06", "filename": "06_Renewable_Energy_Global_28_suppliers.xlsx", "industry": "Renewable Energy", "geography": "Global", "supplier_count": 28, "description": "Solar panels, wind turbine components, and energy storage material suppliers."},
+    {"id": "07", "filename": "07_Food_Beverage_India_32_suppliers.xlsx",     "industry": "Food & Beverage",  "geography": "India",  "supplier_count": 32, "description": "Agricultural commodities, processing equipment, and cold-chain suppliers across India."},
+    {"id": "08", "filename": "08_Chemicals_Mixed_20_suppliers.xlsx",         "industry": "Chemicals",        "geography": "Mixed",  "supplier_count": 20, "description": "Specialty chemicals, solvents, and industrial compounds suppliers across key regions."},
+    {"id": "09", "filename": "09_Logistics_3PL_Global_15_suppliers.xlsx",    "industry": "Logistics / 3PL",  "geography": "Global", "supplier_count": 15, "description": "Third-party logistics, freight, and last-mile delivery network providers."},
+    {"id": "10", "filename": "10_Medical_Devices_Global_38_suppliers.xlsx",  "industry": "Medical Devices",  "geography": "Global", "supplier_count": 38, "description": "Medical device components, sterilisation materials, and regulatory-compliant OEM suppliers."},
+]
+
+SAMPLE_DATASET_FILENAMES = {d["filename"] for d in SAMPLE_DATASETS}
+
 logger = logging.getLogger("disruptiq.routes.suppliers")
 
 supplier_router = APIRouter(prefix="/api/suppliers", tags=["suppliers"])
+
+
+@supplier_router.get("/sample-datasets")
+async def list_sample_datasets(current_user: dict = Depends(auth.require_auth)):
+    """Return the catalogue of DisruptIQ sample datasets available for download."""
+    return {"datasets": SAMPLE_DATASETS}
+
+
+@supplier_router.get("/sample-datasets/{filename}")
+async def download_sample_dataset(filename: str, current_user: dict = Depends(auth.require_auth)):
+    """Stream a sample dataset .xlsx file for the authenticated user to download."""
+    # Guard against path traversal
+    if "/" in filename or "\\" in filename or ".." in filename:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    matched = next((d for d in SAMPLE_DATASETS if d["filename"] == filename), None)
+    if not matched:
+        raise HTTPException(status_code=404, detail="Sample dataset not found")
+    file_path = _DATASET_DIR / filename
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Dataset file not available on this server")
+    storage.write_audit(
+        event_id=f"sample_dataset_{current_user.get('client_id')}",
+        agent="OnboardingSystem",
+        action="sample_dataset_downloaded",
+        input_summary=filename,
+        output_summary=f"industry={matched['industry']} count={matched['supplier_count']}",
+        client_id=current_user.get("client_id"),
+    )
+    return StreamingResponse(
+        open(file_path, "rb"),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
 
 
 @supplier_router.get("/health")
@@ -302,13 +355,16 @@ async def upload_supplier_excel(
     client["supplier_count"] = len(suppliers)
     client["updated_at"] = _now_utc()
     _mark_onboarding_step(client_id, "suppliers_imported", True)
+    if file.filename in SAMPLE_DATASET_FILENAMES:
+        client["used_sample_dataset"] = True
     _save_local_state()
 
+    is_sample = file.filename in SAMPLE_DATASET_FILENAMES
     storage.write_audit(
         event_id=f"registration_{client_id}",
         agent="OnboardingSystem",
         action="supplier_data_uploaded",
-        input_summary=f"added={len(new_suppliers)} total={len(suppliers)} | file={file.filename}",
+        input_summary=f"added={len(new_suppliers)} total={len(suppliers)} | file={file.filename} | sample={is_sample}",
         output_summary=f"Successfully imported {len(new_suppliers)} new suppliers",
         client_id=client_id,
     )
@@ -469,13 +525,16 @@ async def upload_supplier_csv(
     client["supplier_count"] = len(suppliers)
     client["updated_at"] = _now_utc()
     _mark_onboarding_step(client_id, "suppliers_imported", True)
+    if file.filename in SAMPLE_DATASET_FILENAMES:
+        client["used_sample_dataset"] = True
     _save_local_state()
 
+    is_sample = file.filename in SAMPLE_DATASET_FILENAMES
     storage.write_audit(
         event_id=f"registration_{client_id}",
         agent="OnboardingSystem",
         action="supplier_csv_file_uploaded",
-        input_summary=f"added={len(new_suppliers)} total={len(suppliers)} | file={file.filename}",
+        input_summary=f"added={len(new_suppliers)} total={len(suppliers)} | file={file.filename} | sample={is_sample}",
         output_summary=f"Successfully imported {len(new_suppliers)} new suppliers from CSV",
         client_id=client_id,
     )

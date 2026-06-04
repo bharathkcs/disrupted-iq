@@ -303,6 +303,7 @@ export default function Admin() {
                       <td style={{ ...tdStyle, color: C.text, fontWeight: 600 }}>
                         {row.company_name}
                         {row.premium && <span style={{ marginLeft: 6, display: 'inline-block', padding: '1px 7px', borderRadius: 10, background: 'rgba(250,204,21,0.18)', color: '#fcd34d', fontSize: 10, fontWeight: 800, letterSpacing: '0.06em', verticalAlign: 'middle' }}>★ PRO</span>}
+                        {row.used_sample_dataset && <span style={{ marginLeft: 6, display: 'inline-block', padding: '1px 7px', borderRadius: 10, background: 'rgba(45,212,191,0.15)', color: '#2dd4bf', fontSize: 10, fontWeight: 700, letterSpacing: '0.04em', verticalAlign: 'middle' }}>Sample Data</span>}
                       </td>
                       <td style={{ ...tdStyle, fontFamily: 'monospace', fontSize: 11.5 }}>{row.email || '—'}</td>
                       <td style={{ ...tdStyle, textTransform: 'capitalize' }}>{row.industry}</td>
