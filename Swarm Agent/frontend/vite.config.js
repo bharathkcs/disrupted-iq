@@ -15,12 +15,7 @@ export default defineConfig({
   },
   preview: {
     host: '0.0.0.0',
-    allowedHosts: [
-      'localhost',
-      'localhost:*',
-      '*.railway.app',
-      'disrupted-iq-production-519c.up.railway.app',
-    ],
+    middlewareMode: false,
   },
   server: {
     port: 3000,
