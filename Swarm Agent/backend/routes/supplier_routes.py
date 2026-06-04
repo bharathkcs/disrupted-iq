@@ -32,15 +32,16 @@ import financial_signals
 import storage
 from models import SupplierInput, BulkDeleteRequest
 
-# Walk up from routes/supplier_routes.py until we find a directory containing "dataset/"
-# routes/ -> backend/ -> Swarm Agent/ -> repo-root/   (3 levels up on Railway: /app/)
+# Walk up from this file until a parent directory containing "dataset/" is found.
+# On Railway: /app/routes/supplier_routes.py  -> /app/dataset/
+# Local dev:  .../Swarm Agent/backend/routes/ -> .../Swarm Agent/backend/dataset/
+#             (fallback: .../Swarm/dataset/)
 def _find_dataset_dir() -> Path:
     candidate = Path(__file__).resolve()
-    for _ in range(6):
+    for _ in range(8):
         candidate = candidate.parent
         if (candidate / "dataset").is_dir():
             return candidate / "dataset"
-    # Last resort: same directory as this file
     return Path(__file__).resolve().parent / "dataset"
 
 _DATASET_DIR = _find_dataset_dir()
