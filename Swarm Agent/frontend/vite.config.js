@@ -13,6 +13,10 @@ export default defineConfig({
   define: {
     'process.env.VITE_API_URL': JSON.stringify(backendUrl),
   },
+  preview: {
+    host: '0.0.0.0',
+    allowedHosts: ['disrupted-iq-production-519c.up.railway.app'],
+  },
   server: {
     port: 3000,
     host: true,
