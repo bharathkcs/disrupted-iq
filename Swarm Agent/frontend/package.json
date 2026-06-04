@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite --port 3000 --host",
     "build": "vite build",
-    "preview": "vite preview --port 3000"
+    "preview": "vite preview --port 3000",
+    "start": "vite preview --host 0.0.0.0 --port ${PORT:-3000}"
   },
   "dependencies": {
     "leaflet": "^1.9.4",
