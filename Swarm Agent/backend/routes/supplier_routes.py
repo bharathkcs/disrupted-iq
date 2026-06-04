@@ -65,6 +65,21 @@ logger = logging.getLogger("disruptiq.routes.suppliers")
 supplier_router = APIRouter(prefix="/api/suppliers", tags=["suppliers"])
 
 
+@supplier_router.get("/sample-datasets/debug-path")
+async def debug_dataset_path():
+    """Debug: show resolved dataset directory and which files exist. Public."""
+    import os
+    file_here = str(Path(__file__).resolve())
+    exists = _DATASET_DIR.exists()
+    files = sorted(os.listdir(_DATASET_DIR)) if exists else []
+    return {
+        "this_file": file_here,
+        "dataset_dir": str(_DATASET_DIR),
+        "dataset_dir_exists": exists,
+        "files_found": files,
+    }
+
+
 @supplier_router.get("/sample-datasets")
 async def list_sample_datasets():
     """Return the catalogue of DisruptIQ sample datasets. Public — no auth required."""
