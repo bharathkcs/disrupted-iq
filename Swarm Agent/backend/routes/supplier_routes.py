@@ -32,9 +32,18 @@ import financial_signals
 import storage
 from models import SupplierInput, BulkDeleteRequest
 
-# Resolve dataset directory relative to this file: backend/ -> Swarm Agent/ -> Swarm/ -> dataset/
-_BACKEND_DIR = Path(__file__).resolve().parent.parent
-_DATASET_DIR = _BACKEND_DIR.parent / "dataset"
+# Walk up from routes/supplier_routes.py until we find a directory containing "dataset/"
+# routes/ -> backend/ -> Swarm Agent/ -> repo-root/   (3 levels up on Railway: /app/)
+def _find_dataset_dir() -> Path:
+    candidate = Path(__file__).resolve()
+    for _ in range(6):
+        candidate = candidate.parent
+        if (candidate / "dataset").is_dir():
+            return candidate / "dataset"
+    # Last resort: same directory as this file
+    return Path(__file__).resolve().parent / "dataset"
+
+_DATASET_DIR = _find_dataset_dir()
 
 SAMPLE_DATASETS = [
     {"id": "01", "filename": "01_Automotive_Global_25_suppliers.xlsx",       "industry": "Automotive",       "geography": "Global", "supplier_count": 25, "description": "Tier-1 and Tier-2 automotive parts suppliers across North America, Europe, and Asia."},
