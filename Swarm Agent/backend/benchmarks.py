@@ -39,18 +39,26 @@ def _resolve_dataset_dir():
     file_path = Path(__file__).resolve()
 
     # Try: parent/parent/dataset (local dev: .../Swarm Agent/backend/benchmarks.py)
-    if (file_path.parents[1] / ".." / "dataset").exists():
-        return (file_path.parents[1] / ".." / "dataset").resolve()
+    try:
+        candidate = (file_path.parents[1] / ".." / "dataset").resolve()
+        if candidate.exists():
+            return candidate
+    except IndexError:
+        pass
 
     # Try: parent/dataset (Railway: /app/dataset if copied during build)
     if (file_path.parent / "dataset").exists():
         return file_path.parent / "dataset"
 
-    # Try: siblings or common locations
-    for parent_count in range(5):
-        candidate = file_path.parents[parent_count] / "dataset"
+    # Try: walking up the directory tree (safe bounds check)
+    current = file_path.parent
+    for _ in range(10):  # Limit iterations to 10 levels
+        candidate = current / "dataset"
         if candidate.exists():
             return candidate
+        if current.parent == current:  # Reached filesystem root
+            break
+        current = current.parent
 
     # Fallback: return default path (won't crash, will just log warning if datasets not found)
     return file_path.parent / "dataset"
