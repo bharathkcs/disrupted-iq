@@ -185,9 +185,9 @@ def _send_email(to_email: str, subject: str, html_body: str, text_body: str | No
             f"{'-'*64}\n{text_body}\n{'='*64}\n"
         )
         # Windows consoles are often cp1252 — strip characters the active
-        # encoding cannot represent so the print never raises.
+        # encoding cannot represent so logging never raises.
         enc = getattr(sys.stdout, "encoding", None) or "utf-8"
-        print(block.encode(enc, errors="replace").decode(enc, errors="replace"))
+        logger.info(block.encode(enc, errors="replace").decode(enc, errors="replace"))
         _audit_email(to_email, subject, "console", True)
         return True
 

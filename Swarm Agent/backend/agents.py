@@ -404,7 +404,7 @@ async def poll_news_and_trigger() -> list[dict]:
             response.raise_for_status()
             payload = response.json()
     except Exception as exc:
-        print(f"[news] poll failed: {exc}")
+        logger.warning("[news] poll failed: %s", exc)
         return []
 
     results = []
@@ -485,7 +485,7 @@ async def poll_open_meteo() -> list[dict]:
                 air_response.raise_for_status()
                 air_payload = air_response.json()
         except Exception as exc:
-            print(f"[weather] poll failed for {city}: {exc}")
+            logger.warning("[weather] poll failed for %s: %s", city, exc)
             continue
 
         daily = forecast_payload.get("daily", {})
@@ -1865,7 +1865,7 @@ async def simulation_agent(event: dict, action: dict,
         return await asyncio.wait_for(_run_simulation(), timeout=sla_seconds)
     except asyncio.TimeoutError:
         # SLA exceeded — return partial results with flag
-        print(f"⚠️  Simulation SLA exceeded ({sla_seconds}s). Returning baseline scenarios.")
+        logger.warning("Simulation SLA exceeded (%ss). Returning baseline scenarios.", sla_seconds)
         storage.write_audit(event["event_id"], "SimulationAgent", "sla_exceeded",
                             f"timeout={sla_seconds}s", "Returned baseline scenarios only")
         return {

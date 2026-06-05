@@ -63,5 +63,9 @@ logs/
 .coverage
 htmlcov/
 
+# Runtime state (ephemeral, regenerated per run)
+local_state.json
+**/local_state.json
+
 # Build artifacts
 venv/

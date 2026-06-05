@@ -223,11 +223,28 @@ Monitor ─┐
 
 ## 🧪 Testing & Quality
 
-- **Unit tests** for auth, storage, LLM client, algorithms
-- **Integration tests** for swarm pipeline with mock LLM
-- **E2E tests** for critical user flows (signup, trigger event, confirm action)
-- **Security scanning** — no hardcoded secrets, PBKDF2 hashing (500k iterations), rate-limiting
-- **Load testing** — 9-agent swarm under 90s SLA
+- **171 automated tests, all passing** — run with `cd "Swarm Agent/backend" && python -m pytest tests/ -q`
+- **Unit tests** for auth, storage, LLM client, algorithms, ESG/financial signals, federated memory
+- **Integration tests** for the swarm pipeline and strict multi-tenant isolation
+- **Security** — no hardcoded secrets, PBKDF2-HMAC-SHA256 (500k iterations), auth rate-limiting
+
+### Measured Performance (deterministic / demo mode)
+
+Per-stage swarm latency, averaged over 3 runs (severity 8, 10 suppliers), via
+`python bench_swarm.py`:
+
+| Stage | Avg latency |
+|---|---|
+| Monitor | < 1 ms |
+| Forecast | < 1 ms |
+| Risk | ~2.6 s |
+| Action | < 1 ms |
+| Simulation | < 1 ms |
+| **Total** | **~2.7 s** |
+
+**Well within the 90-second SLA.** In live mode the dominant cost is the ~9
+LLM round-trips (network-bound); when the LLM is unavailable the deterministic
+fallbacks above keep the full pipeline under 3 seconds.
 
 ---
 
@@ -324,6 +341,55 @@ Standard multi-agent frameworks (LangGraph, CrewAI, AutoGen) are **stateless**�
 
 ---
 
+## 🤖 AI Tools & Model Usage (Disclosure)
+
+In the interest of full transparency, this section discloses every AI/ML tool used in DisruptIQ and exactly how it is used.
+
+### Large Language Models
+- **GitHub Models API (GPT-4o-class)** — the single LLM backing the swarm. It is invoked by:
+  - **Forecast agent** — demand-impact narrative
+  - **Risk agent** — per-supplier risk narrative
+  - **Action agent** — three ranked recovery options + rationales
+  - **Cascade detection agent** — compound-event analysis
+  - **Supplier communication agent** — outreach-email drafting
+  - **NL interrogation** — conversational Q&A over event context
+  - **Counterfactual agent** — actual-vs-predicted outcome summary
+
+  **Usage:** ~9 LLM calls per swarm run. Free tier = 150 requests/day.
+  **Fallback:** when the quota is exhausted (401/429), every agent degrades to a **dataset-aware deterministic narrative** built from the client's own suppliers — no hallucinated data, no crash.
+
+### Supporting Services
+| Service | Role |
+|---|---|
+| **Azure Cosmos DB** | Persistent multi-tenant storage (in-memory fallback when unconfigured) |
+| **Azure Content Safety** | Filters Risk-agent narratives and supplier-message drafts before display |
+| **SendGrid** | Transactional email (welcome, password reset, support, deletion) |
+| **NewsAPI** | Real-time news alerts (filtered by client zones / industry) |
+| **OpenWeatherMap** | Weather data for client supplier zones |
+
+### Model Configuration
+- **Provider/model:** GitHub Models API (GPT-4o-class)
+- **Temperature:** 0.7 (narrative generation)
+- **Max tokens:** ~2,000 per call
+- **Output validation:** all LLM JSON is schema-checked; malformed output falls back to deterministic logic
+
+### Human Creativity & Oversight
+The AI assists humans — it never decides alone:
+- **9-agent architecture** designed by humans; agents run a mix of deterministic and LLM steps
+- **Human-in-the-loop gates** are server-enforced — no action is committed without explicit human approval (co-reviewer for severity ≥9)
+- **Stage-2 memory write-backs** only happen after a human confirms the real outcome — humans decide what the system learns
+- **Thresholds, scenarios, and supplier data** are all human-curated
+
+### Data Privacy
+- **Demo mode:** deterministic output, no live LLM or database calls
+- **Live mode:** LLM calls and results stored in Cosmos DB with strict `client_id` isolation
+- All tenant data is isolated per `client_id` at every read/write path
+
+### Development Tooling
+- This project was developed with the assistance of **AI coding tools** (Claude Code) for implementation, refactoring, and review. All architecture decisions, agent design, and final code were human-directed and human-reviewed.
+
+---
+
 ## 🤝 Contributing
 
 This is a hackathon submission. All code is production-ready and fully documented.
@@ -332,7 +398,7 @@ This is a hackathon submission. All code is production-ready and fully documente
 
 ## 📄 License
 
-Proprietary — DisruptIQ (Hackathon 2026)
+Licensed under the [MIT License](LICENSE).
 
 ---
 

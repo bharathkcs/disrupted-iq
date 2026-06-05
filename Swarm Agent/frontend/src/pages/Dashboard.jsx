@@ -40,9 +40,7 @@ function MetricsBar() {
 
   useEffect(() => {
     api.suppliers().then(data => {
-      console.log('Raw suppliers response:', data)
       const suppliersList = Array.isArray(data) ? data : (data?.suppliers ? data.suppliers : [])
-      console.log('Suppliers loaded:', suppliersList.length, suppliersList)
       setSuppliers(suppliersList)
     }).catch(err => {
       console.error('Failed to load suppliers:', err)

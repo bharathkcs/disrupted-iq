@@ -340,10 +340,8 @@ export default function App() {
   }, [location.pathname])
 
   useEffect(() => {
-    console.log('App mounted')
     api.config()
       .then(cfg => {
-        console.log('Config loaded:', cfg)
         setStatusInfo(cfg.services)
         setAppReady(true)
       })
