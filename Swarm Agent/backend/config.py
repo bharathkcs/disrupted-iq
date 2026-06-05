@@ -51,7 +51,7 @@ OPENMETEO_AIR_QUALITY_BASE = os.getenv("OPENMETEO_AIR_QUALITY_BASE", "https://ai
 
 # Email service
 SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY", "")
-SENDGRID_FROM_EMAIL = os.getenv("SENDGRID_FROM_EMAIL", "noreply@disruptiq.dev")
+SENDGRID_FROM_EMAIL = os.getenv("SENDGRID_FROM_EMAIL", "noreply@disruptiqai.com")
 SENDGRID_FROM_NAME = os.getenv("SENDGRID_FROM_NAME", "DisruptIQ Platform")
 
 # Email service — Gmail SMTP (alternative to SendGrid)
@@ -60,7 +60,7 @@ SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 SMTP_USER = os.getenv("SMTP_USER", "")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
 SMTP_FROM_NAME = os.getenv("SMTP_FROM_NAME", "DisruptIQ Platform")
-SMTP_FROM_EMAIL = os.getenv("SMTP_FROM_EMAIL", "")
+SMTP_FROM_EMAIL = os.getenv("SMTP_FROM_EMAIL", "noreply@disruptiqai.com")
 
 # Master email switch — when false, emails are logged to console instead of sent.
 EMAIL_ENABLED = _bool(os.getenv("EMAIL_ENABLED", "false"), False)
