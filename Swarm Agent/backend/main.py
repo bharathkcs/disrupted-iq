@@ -782,7 +782,7 @@ async def weekly_digest_loop():
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    global news_polling_task, openmeteo_polling_task, weekly_digest_task, daily_briefing_task, _tracer, _telemetry_logger
+    global news_polling_task, openmeteo_polling_task, weekly_digest_task, daily_briefing_task, _tracer, _telemetry_logger, premium_requests_db
     # Wire the live sessions_db into auth so require_auth can do JTI revocation
     # checks without a circular import.  Must run before any request is served.
     auth.set_sessions_store(sessions_db)
@@ -810,6 +810,23 @@ async def lifespan(_: FastAPI):
         daily_briefing_task = asyncio.create_task(daily_briefing_loop())
 
     await poll_open_meteo()
+
+    # Reload persisted admin stores (premium requests, support tickets, feedback)
+    try:
+        loaded = storage.get_premium_requests()
+        if loaded:
+            premium_requests_db.clear()
+            premium_requests_db.extend(loaded)
+        for t in storage.get_support_tickets():
+            cid = t.get("client_id")
+            if cid and t not in support_db[cid]:
+                support_db[cid].append(t)
+        for r in storage.get_feedback_records():
+            cid = r.get("client_id")
+            if cid and r not in feedback_db[cid]:
+                feedback_db[cid].append(r)
+    except Exception as e:
+        logger.warning("Admin store reload failed: %s", e)
 
     try:
         yield
@@ -1598,40 +1615,6 @@ feedback_db = defaultdict(list)  # { client_id: [{ rating, comment, created_at }
 support_db = defaultdict(list)  # { client_id: [{ ticket_id, category, priority, description, created_at }] }
 premium_requests_db = []  # [{ id, client_id, company_name, email, status, requested_at, decided_at, decided_by }]
 self_deletions_db = []  # [{ client_id, company_name, email, reason, reason_label, deleted_at, supplier_count, event_count, was_premium }]
-
-
-@fastapi_app.on_event("startup")
-async def _startup_load_admin_stores():
-    global premium_requests_db
-    try:
-        # Reload persisted lists from local state file
-        if _os.path.exists(_LOCAL_STATE_FILE):
-            try:
-                with open(_LOCAL_STATE_FILE, "r", encoding="utf-8") as _fh:
-                    _p = json.load(_fh)
-                for _rec in _p.get("self_deletions_db", []):
-                    if _rec not in self_deletions_db:
-                        self_deletions_db.append(_rec)
-                _saved_pr = _p.get("premium_requests_db", [])
-                if _saved_pr and not premium_requests_db:
-                    premium_requests_db.extend(_saved_pr)
-            except Exception as _e:
-                logger.warning("Startup state reload failed: %s", _e)
-
-        loaded = storage.get_premium_requests()
-        if loaded:
-            premium_requests_db.clear()
-            premium_requests_db.extend(loaded)
-        for t in storage.get_support_tickets():
-            cid = t.get("client_id")
-            if cid and t not in support_db[cid]:
-                support_db[cid].append(t)
-        for r in storage.get_feedback_records():
-            cid = r.get("client_id")
-            if cid and r not in feedback_db[cid]:
-                feedback_db[cid].append(r)
-    except Exception as e:
-        logger.warning("Admin store reload failed: %s", e)
 
 
 def _supplier_limit(client_id: str | None) -> int:

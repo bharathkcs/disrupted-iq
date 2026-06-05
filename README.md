@@ -1,5 +1,10 @@
 # DisruptIQ V2 — Multi-Tenant Supply Chain Disruption Response Platform
 
+[![CI](https://github.com/bharathkcs/disrupted-iq/actions/workflows/ci.yml/badge.svg)](https://github.com/bharathkcs/disrupted-iq/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-171%20passing-brightgreen)](https://github.com/bharathkcs/disrupted-iq/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.12-blue)](https://www.python.org/)
+
 **A real-time AI-powered platform that detects supply chain disruptions and coordinates nine specialized agents to forecast impact, score risk, propose ranked recovery actions, simulate outcomes, and record actual results for continuous learning—all in under 90 seconds.**
 
 ---
