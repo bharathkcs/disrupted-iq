@@ -79,7 +79,7 @@ def _infer_client_id(event_id: str | None = None, explicit_client_id: str | None
 
 def _get_cosmos():
     """Lazy Cosmos initialization. Returns None if not configured or in demo mode."""
-    global _cosmos_client, _cosmos_db, _cosmos_containers
+    global _cosmos_client, _cosmos_db
     if config.DEMO_MODE or not config.is_real_cosmos():
         return None
     if _cosmos_client is not None:
@@ -88,16 +88,19 @@ def _get_cosmos():
         from azure.cosmos import CosmosClient, PartitionKey
         _cosmos_client = CosmosClient(config.COSMOS_ENDPOINT, credential=config.COSMOS_KEY)
         _cosmos_db = _cosmos_client.create_database_if_not_exists(id=config.COSMOS_DATABASE)
-        for name in [config.COSMOS_CONTAINER_MEMORY, config.COSMOS_CONTAINER_AUDIT, config.COSMOS_CONTAINER_EVENTS, config.COSMOS_CONTAINER_CF]:
+        for name in [config.COSMOS_CONTAINER_MEMORY, config.COSMOS_CONTAINER_AUDIT, config.COSMOS_CONTAINER_EVENTS]:
             _cosmos_containers[name] = _get_or_create_container(_cosmos_db, PartitionKey, name)
-        for name in [config.COSMOS_CONTAINER_PREMIUM, config.COSMOS_CONTAINER_SUPPORT, config.COSMOS_CONTAINER_FEEDBACK]:
+        for name in [config.COSMOS_CONTAINER_PREMIUM, config.COSMOS_CONTAINER_SUPPORT, config.COSMOS_CONTAINER_FEEDBACK, config.COSMOS_CONTAINER_CF]:
             try:
                 c = _cosmos_db.get_container_client(name)
                 c.read()
                 _cosmos_containers[name] = c
             except Exception:
-                _cosmos_containers[name] = _cosmos_db.create_container_if_not_exists(
-                    id=name, partition_key=PartitionKey(path="/id"))
+                try:
+                    _cosmos_containers[name] = _cosmos_db.create_container_if_not_exists(
+                        id=name, partition_key=PartitionKey(path="/id"))
+                except Exception as ce:
+                    logger.warning("Could not init optional container %s (skipping): %s", name, ce)
         # Seed memory + stage-2 memory on first run (for R-05/R-09 data)
         try:
             existing = list(_cosmos_containers[config.COSMOS_CONTAINER_MEMORY].read_all_items(max_item_count=1))
