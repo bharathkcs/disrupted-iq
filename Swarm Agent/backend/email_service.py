@@ -266,9 +266,23 @@ def _send_email(to_email: str, subject: str, html_body: str,
                 text_body: str | None = None) -> bool:
     text_body = text_body or _html_to_text(html_body)
 
+    # Diagnostic: always log transport state so Railway logs show what's happening
+    logger.info(
+        "[email:dispatch] to=%s | subject=%s | EMAIL_ENABLED=%s | "
+        "sendgrid=%s | smtp_user=%s | smtp_pass_set=%s",
+        to_email, subject,
+        config.EMAIL_ENABLED,
+        bool(config.SENDGRID_API_KEY and not config.SENDGRID_API_KEY.startswith("PLACEHOLDER")),
+        bool(config.SMTP_USER),
+        bool(config.SMTP_PASSWORD),
+    )
+
     if not config.is_real_email():
-        logger.debug("[email:skipped] EMAIL not configured — to=%s | subject=%s",
-                     to_email, subject)
+        logger.warning(
+            "[email:skipped] is_real_email()=False — email not sent to %s. "
+            "Check EMAIL_ENABLED, SMTP_USER, SMTP_PASSWORD env vars on Railway.",
+            to_email,
+        )
         return True
 
     if not config.EMAIL_ENABLED:
