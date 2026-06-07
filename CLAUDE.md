@@ -1,8 +1,8 @@
-# CLAUDE.md — DisruptIQ V2 Complete Project Guide
+# CLAUDE.md — DisruptIQ Complete Project Guide
 
 > **Single source of truth.** This file tells Claude (or any other LLM) everything needed to understand, run, extend, debug, and audit this project. If you change anything substantial, update the section below it.
 
-**Last Updated:** 2026-05-28 (revised — includes premium system, admin console, NL enhancement, InsightsPanel, DemoWelcomeTour, account suspension)
+
 **Repo:** `e:\Swarm`
 **Stack:** Python 3.12 + FastAPI + Socket.IO (backend) · React 18 + Vite + Recharts (frontend) · Azure Cosmos DB / in-memory fallback
 

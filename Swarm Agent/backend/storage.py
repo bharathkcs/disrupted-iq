@@ -137,23 +137,16 @@ def _get_cosmos():
 
 
 def _get_or_create_container(db, partition_key_cls, name: str):
-    """Prefer existing containers and avoid forcing new dedicated throughput on constrained accounts."""
+    """Prefer existing containers; never request dedicated throughput so constrained accounts aren't pushed over their RU/s cap."""
     try:
         container = db.get_container_client(name)
         container.read()
         return container
     except Exception:
-        try:
-            return db.create_container_if_not_exists(
-                id=name,
-                partition_key=partition_key_cls(path="/event_id"),
-            )
-        except Exception:
-            return db.create_container_if_not_exists(
-                id=name,
-                partition_key=partition_key_cls(path="/event_id"),
-                offer_throughput=400,
-            )
+        return db.create_container_if_not_exists(
+            id=name,
+            partition_key=partition_key_cls(path="/event_id"),
+        )
 
 
 # ═══════════════════════════════════════════════════════════════════════════

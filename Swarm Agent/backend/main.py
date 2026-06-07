@@ -34,8 +34,6 @@ from models import (
 import jwt
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 
 try:
     from sendgrid import SendGridAPIClient
@@ -168,11 +166,10 @@ _LOCAL_STATE_FILE = _os.path.join(_os.path.dirname(__file__), "local_state.json"
 def _save_local_state() -> None:
     """Persist users_db and clients_db to disk so data survives backend restarts.
 
-    Only active when Cosmos is not configured. File is written atomically via a
-    temp-then-rename pattern to avoid corruption on crash mid-write.
+    users_db and clients_db are never written to Cosmos — they live only in
+    this process's memory. Always write to disk regardless of Cosmos health so
+    that accounts survive backend restarts.
     """
-    if storage.get_cosmos_health().get("status") == "healthy":
-        return  # Cosmos is authoritative — no need for local file
     try:
         payload = {
             "users_db": {k: {f: v for f, v in u.items() if f != "password_hash"} for k, u in users_db.items()},
@@ -906,19 +903,6 @@ fastapi_app.include_router(feedback_router)
 fastapi_app.include_router(misc_router)
 fastapi_app.include_router(monitor_router)
 
-try:
-    limiter = Limiter(key_func=get_remote_address)
-    fastapi_app.state.limiter = limiter
-except Exception as e:
-    logger.warning(f"Rate limiter initialization failed: {e}. Continuing without rate limiting.")
-    # Create a no-op limiter decorator for graceful degradation
-    class NoOpLimiter:
-        def limit(self, rule):
-            def decorator(func):
-                return func
-            return decorator
-    limiter = NoOpLimiter()
-    fastapi_app.state.limiter = limiter
 
 swarm_states: dict[str, dict[str, dict]] = {}
 news_polling_task: asyncio.Task | None = None

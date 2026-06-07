@@ -406,7 +406,10 @@ async def upload_supplier_excel(
     user_email = current_user.get("email", "")
     company_name = client.get("company_name", "")
     email_sent = email_service.send_supplier_import_confirmation(
-        email=user_email, company_name=company_name, suppliers=new_suppliers, warnings=errors)
+        email=user_email, company_name=company_name, suppliers=new_suppliers,
+        warnings=errors, client=client)
+    if email_sent:
+        _save_local_state()
 
     if limit_reached:
         msg = (
@@ -575,8 +578,11 @@ async def upload_supplier_csv(
 
     user_email = current_user.get("email", "")
     company_name = client.get("company_name", "")
-    email_service.send_supplier_import_confirmation(
-        email=user_email, company_name=company_name, suppliers=new_suppliers, warnings=errors)
+    csv_email_sent = email_service.send_supplier_import_confirmation(
+        email=user_email, company_name=company_name, suppliers=new_suppliers,
+        warnings=errors, client=client)
+    if csv_email_sent:
+        _save_local_state()
 
     if limit_reached:
         msg = (

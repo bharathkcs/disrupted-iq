@@ -1,4 +1,4 @@
-# DisruptIQ V2 — Memory-Calibrated Agent Swarm for Supply Chain Disruption Response
+# DisruptIQ — Memory-Calibrated Agent Swarm for Supply Chain Disruption Response
 
 > **Microsoft Build AI Hackathon 2026 · Theme 05: Agent Swarms**
 
@@ -75,7 +75,7 @@ Trigger Event
      │
      ▼
 ┌──────────────────────────────────────────────────────────────┐
-│  1. Monitor (BR-001)                                         │
+│  1. Monitor                                                  │
 │     Rule-based severity scorer + keyword detection           │
 │     Decides: engage swarm or stop (below threshold)          │
 └──────────────────────────┬───────────────────────────────────┘
@@ -83,8 +83,8 @@ Trigger Event
           ┌────────────────┴─────────────────┐
           ▼                                  ▼
 ┌──────────────────┐              ┌───────────────────────────┐
-│ 2. SwarmMemory   │              │ 3. CascadeDetect (BR-009) │
-│    (BR-002)      │              │    48-h compound window   │
+│ 2. SwarmMemory   │              │ 3. CascadeDetect          │
+│                  │              │    48-h compound window   │
 │    Stage-1 recall│              │    CCS algorithm          │
 │    by geo +      │              │    Supplier-overlap ratio │
 │    supplier IDs  │              └──────────────┬────────────┘
@@ -97,14 +97,14 @@ Trigger Event
           ▼                  ▼               │
 ┌───────────────┐   ┌───────────────┐       │
 │  4. Forecast  │   │   5. Risk     │       │
-│   (BR-003)    │   │   (BR-004)    │       │
+│               │   │               │       │
 │   XGBoost +   │   │   5-factor    │       │
 │   MCF algo    │   │   weighted    │       │
 └──────┬────────┘   └──────┬────────┘       │
        └──────────┬─────────┘               │
                   ▼                         │
 ┌────────────────────────────────────────── ┘
-│  6. Action (BR-005)
+│  6. Action
 │     3 ranked options · 3-sentence rationales per option
 │     WHY supplier · HOW it helps · RISK to watch
 │     RTO tags · Quantity + cost premium formulas
@@ -112,20 +112,20 @@ Trigger Event
 └──────────────────────────┬───────────────
                            ▼
               ┌──────────────────────────┐
-              │  7. Validator (BR-006)  │
+              │  7. Validator            │
               │     MSDS algorithm       │
               │     Dissent if >15 pts   │
               └──────────────┬───────────┘
                              ▼
               ┌──────────────────────────┐
-              │  8. Simulation (BR-007) │
+              │  8. Simulation           │
               │     Monte Carlo          │
               │     P10 / P50 / P90     │
               │     per option, 30 s SLA │
               └──────────────┬───────────┘
                              ▼
               ┌───────────────────────────────┐
-              │  HIL Gates (BR-008)           │
+              │  HIL Gates                    │
               │  Server-enforced — 3 gates:   │
               │  dissent · cascade · sim.     │
               │  Severity ≥9 → co-reviewer    │
@@ -133,7 +133,7 @@ Trigger Event
               └──────────────┬────────────────┘
                              ▼
               ┌──────────────────────────────┐
-              │  9. Counterfactual (BR-010)  │
+              │  9. Counterfactual           │
               │     After human resolves:    │
               │     actual − predicted →     │
               │     Stage-2 memory write     │
@@ -870,24 +870,24 @@ All supplier datasets are synthetic — generated via `dataset/_generate.py` usi
 
 ---
 
-## BRD Coverage
+## Feature Coverage
 
-All 12 business requirements (BR-001 through BR-012) and all 13 UI specifications (UI01-UI13) are implemented.
+All pipeline agents and platform modules are implemented and verified.
 
-| BR | Agent / Feature | Status |
+| Feature | Agent / Module | Status |
 |---|---|---|
-| BR-001 | Monitor agent — severity computation + swarm gating | ✅ |
-| BR-002 | SwarmMemory — Stage-1 recall by geo + supplier IDs | ✅ |
-| BR-003 | Forecast agent — XGBoost heuristic + MCF calibration | ✅ |
-| BR-004 | Risk agent — 5-factor weighted scoring + "Why?" breakdown | ✅ |
-| BR-005 | Action agent — 3 ranked options, 3-sentence rationales, RTO tags | ✅ |
-| BR-006 | Validator — MSDS dissent score, >15-pt gate | ✅ |
-| BR-007 | Simulation — Monte Carlo P10/P50/P90, 30 s SLA | ✅ |
-| BR-008 | HIL gates — server-enforced, 3 gates, co-reviewer severity ≥9 | ✅ |
-| BR-009 | CascadeDetect — 48-hour window, CCS algorithm, supplier overlap | ✅ |
-| BR-010 | Counterfactual — Stage-2 memory write, feeds MCF | ✅ |
-| BR-011 | Multi-tenant isolation — all 86 endpoints, all agents, all socket rooms | ✅ |
-| BR-012 | Admin console — 10 tabs, 20 endpoints, suspend/premium/support | ✅ |
+| Monitor | Severity computation + swarm gating | ✅ |
+| Swarm Memory | Stage-1 recall by geo + supplier IDs | ✅ |
+| Forecast | XGBoost heuristic + MCF calibration | ✅ |
+| Risk | 5-factor weighted scoring + "Why?" breakdown | ✅ |
+| Action | 3 ranked options, 3-sentence rationales, RTO tags | ✅ |
+| Validator | MSDS dissent score, >15-pt gate | ✅ |
+| Simulation | Monte Carlo P10/P50/P90, 30 s SLA | ✅ |
+| HIL Gates | Server-enforced, 3 gates, co-reviewer severity ≥9 | ✅ |
+| Cascade Detection | 48-hour window, CCS algorithm, supplier overlap | ✅ |
+| Counterfactual | Stage-2 memory write, feeds MCF | ✅ |
+| Multi-tenant isolation | All 86 endpoints, all agents, all socket rooms | ✅ |
+| Admin console | 10 tabs, 20 endpoints, suspend/premium/support | ✅ |
 
 ---
 
@@ -912,16 +912,6 @@ All 12 business requirements (BR-001 through BR-012) and all 13 UI specification
 - The "dataset-aware deterministic fallback" pattern — fallbacks derive their output from the client's actual uploaded suppliers, not generic text
 - All 10 industry-specific supplier datasets (manually curated supplier profiles, categories, zones, buffer days, reliability scores)
 - The 30-supplier free-tier cap and premium approval admin workflow
-
----
-
-## Team
-
-| Name | Role |
-|---|---|
-| **Preethi Sundaravelu** | Solo developer — full-stack architecture, AI agent design, FastAPI backend, React frontend, product design, dataset curation |
-
-*Solo submission. All code written during the hackathon period (May 5 – June 7, 2026). No pre-existing work reused.*
 
 ---
 

@@ -1,8 +1,7 @@
-# DisruptIQ V2 — Detailed Architecture Guide
+# DisruptIQ — Detailed Architecture Guide
 
 > Comprehensive system design, data flow, and architectural patterns.
 
-**Last Updated:** 2026-05-22
 
 ---
 

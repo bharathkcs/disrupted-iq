@@ -1,8 +1,6 @@
-# DisruptIQ V2 — Configuration & Thresholds Guide
+# DisruptIQ — Configuration & Thresholds Guide
 
 > Configurable parameters, thresholds, and feature flags.
-
-**Last Updated:** 2026-05-22
 
 ---
 

@@ -1,8 +1,7 @@
-# DisruptIQ V2 — WebSocket Events Reference
+# DisruptIQ — WebSocket Events Reference
 
 > Complete WebSocket event types, payload structures, and client-side handling.
 
-**Last Updated:** 2026-05-22
 
 ---
 

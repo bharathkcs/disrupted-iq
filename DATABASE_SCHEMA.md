@@ -1,8 +1,4 @@
-# DisruptIQ V2 — Complete Database Schema
-
-> Detailed schema, field definitions, relationships, and usage examples.
-
-**Last Updated:** 2026-05-22
+# DisruptIQ — Complete Database Schema
 
 ---
 

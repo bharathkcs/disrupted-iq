@@ -1,10 +1,4 @@
-# DisruptIQ V2 — Deployment & Setup Guide
-
-> Step-by-step instructions for local development, testing, and production deployment.
-
-**Last Updated:** 2026-05-22
-
----
+# DisruptIQ — Deployment & Setup Guide
 
 ## Local Development Setup
 
