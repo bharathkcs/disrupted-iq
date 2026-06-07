@@ -146,18 +146,25 @@ function TrustBar() {
 }
 
 function ProblemSection() {
+  const story = [
+    { icon: '🌊', label: 'Red Sea · Geopolitical Crisis', title: 'Strait of Hormuz blocked', detail: 'Houthi attacks escalate. Major shipping lanes through the Strait of Hormuz are closed. 40% of your components move through this route.', color: '#f87171', tag: 'Geopolitics' },
+    { icon: '🌀', label: 'Bay of Bengal · Severe Weather', title: 'Cyclone Michaung makes landfall', detail: 'Category 4 cyclone hits Chennai coast. Your 3 critical auto-parts suppliers are in the direct impact zone. Ports closed indefinitely.', color: '#fb923c', tag: 'Natural disaster' },
+    { icon: '✈️', label: 'Delhi · Regulatory', title: 'Customs hold on air freight', detail: 'New compliance directive freezes air cargo clearances for 48 hrs. Your emergency reroute option just disappeared.', color: '#facc15', tag: 'Regulatory' },
+  ]
   const manual = [
-    { t: '10:00', e: 'Cyclone news hits Chennai port', d: '30 min to even notice', icon: '📰' },
-    { t: '10:30', e: 'Analyse supplier impact by hand', d: '~2 hours', icon: '🔍' },
-    { t: '12:30', e: 'Forecast the demand impact', d: '~2 hours', icon: '📉' },
-    { t: '14:30', e: 'Brainstorm recovery options', d: '~2 hours', icon: '🧩' },
-    { t: '16:30', e: 'Finally make a decision', d: 'after 6.5 hours', icon: '🏁', final: true },
+    { t: '06:00', e: 'Someone reads the news', d: 'No automated monitoring — you found out by chance', icon: '📰' },
+    { t: '07:30', e: 'Manually map affected suppliers', d: '~90 min of spreadsheet work', icon: '🗂️' },
+    { t: '10:00', e: 'Call suppliers one by one', d: '~3 hours of phone calls and emails', icon: '📞' },
+    { t: '13:00', e: 'Try to forecast impact', d: 'Guesswork — no Monte Carlo, no data', icon: '📉' },
+    { t: '15:30', e: 'Brainstorm recovery options', d: 'Executive war-room convened', icon: '🧩' },
+    { t: '18:00', e: 'Decision — finally', d: 'After 12 hours. Competitors already acted.', icon: '🏁', final: true },
   ]
   const smart = [
-    { t: '0s', e: 'Cyclone detected automatically', d: 'NewsAPI + Open-Meteo feeds', icon: '🛰️' },
-    { t: '45s', e: 'Swarm analyses & ranks 3 options', d: '9 agents · Monte Carlo done', icon: '🤖' },
-    { t: '80s', e: 'Human reviews & approves', d: 'risk explained · gates cleared', icon: '👤' },
-    { t: '90s', e: 'Action executed', d: 'inventory pre-positioned', icon: '⚡', final: true },
+    { t: '0s', e: 'All 3 threats detected simultaneously', d: 'NewsAPI · Open-Meteo · geopolitical feeds', icon: '🛰️' },
+    { t: '8s', e: '6 affected suppliers identified & scored', d: 'Cross-referenced against your uploaded network', icon: '🗺️' },
+    { t: '30s', e: 'Cascade risk mapped across Tier-1 & Tier-2', d: 'Compound severity calculated — 3 threats, 1 response', icon: '🔗' },
+    { t: '60s', e: '3 ranked recovery options generated', d: 'Monte Carlo outcomes · cost impact · RTO tagged', icon: '🤖' },
+    { t: '85s', e: 'You review, approve, act', d: 'Full risk explained · every gate cleared', icon: '👤', final: true },
   ]
   const Row = ({ s, win }) => (
     <li className={`ptl-item ${s.final ? 'final' : ''}`}>
@@ -174,31 +181,58 @@ function ProblemSection() {
   return (
     <section className="lp-section problem">
       <div className="lp-container">
-        <Reveal><SectionHead eyebrow="The difference" title="Hours of scramble, or 90 seconds of clarity" sub="The same cyclone hits Chennai port. Here's how the day plays out — with and without DisruptIQ." /></Reveal>
+        <Reveal>
+          <SectionHead
+            eyebrow="Real-world scenario"
+            title="Three threats hit simultaneously. What happens next?"
+            sub="It's 6 AM. Geopolitics, weather and regulation just collided against your supply chain. DisruptIQ already knows."
+          />
+        </Reveal>
 
-        <Reveal className="vs-band" delay={60}>
+        <Reveal className="story-grid" delay={60}>
+          {story.map((s, i) => (
+            <div className="story-card" key={i} style={{ '--story-color': s.color }}>
+              <div className="story-card-top">
+                <span className="story-icon">{s.icon}</span>
+                <span className="story-tag" style={{ color: s.color, borderColor: `${s.color}55`, background: `${s.color}14` }}>{s.tag}</span>
+              </div>
+              <div className="story-label">{s.label}</div>
+              <div className="story-title">{s.title}</div>
+              <p className="story-detail">{s.detail}</p>
+            </div>
+          ))}
+        </Reveal>
+
+        <Reveal className="story-connector" delay={100}>
+          <div className="story-connector-line">
+            <span className="story-connector-dot" />
+            <span className="story-connector-text">DisruptIQ detects all three. Simultaneously. In seconds.</span>
+            <span className="story-connector-dot" />
+          </div>
+        </Reveal>
+
+        <Reveal className="vs-band" delay={140}>
           <div className="vs-stat vs-loss">
-            <div className="vs-num">≈ 6.5 hrs</div>
+            <div className="vs-num">12 hrs</div>
             <div className="vs-label">Manual response time</div>
           </div>
           <div className="vs-divider"><span>VS</span></div>
           <div className="vs-stat vs-win">
-            <div className="vs-num">90 sec</div>
-            <div className="vs-label">With DisruptIQ — <strong>260× faster</strong></div>
+            <div className="vs-num">85 sec</div>
+            <div className="vs-label">With DisruptIQ — <strong>500× faster</strong></div>
           </div>
         </Reveal>
 
-        <Reveal className="problem-grid" delay={120}>
+        <Reveal className="problem-grid" delay={180}>
           <div className="problem-column loss">
-            <div className="problem-tag negative">⏰ Today — manual response</div>
+            <div className="problem-tag negative">⏰ Without DisruptIQ</div>
             <ol className="ptl">{manual.map((s, i) => <Row key={i} s={s} win={false} />)}</ol>
-            <div className="timeline-metric negative">💸 ₹2.4Cr revenue lost</div>
+            <div className="timeline-metric negative">💸 ₹4.8Cr revenue at risk · competitors already moved</div>
           </div>
-
           <div className="problem-column win">
             <div className="problem-tag positive">⚡ With DisruptIQ</div>
             <ol className="ptl">{smart.map((s, i) => <Row key={i} s={s} win={true} />)}</ol>
-            <div className="timeline-metric positive">✅ ₹2.4Cr revenue saved</div>
+            <div className="timeline-metric positive">✅ Decision made in 85 seconds · supply chain secured</div>
           </div>
         </Reveal>
       </div>
@@ -589,6 +623,65 @@ function FinalCTASection({ onDemoClick, onSignupClick }) {
   )
 }
 
+function CreatorSection() {
+  return (
+    <section className="lp-section creator">
+      <div className="lp-container creator-inner">
+        <Reveal className="creator-content">
+          <div className="creator-header">
+            <span className="eyebrow-pill">About the developer</span>
+            <h2>Bharath Kumar KCS</h2>
+            <p className="creator-subtitle">Associate Product Manager · Enterprise AI/ML Platforms · 3.5+ years</p>
+          </div>
+        </Reveal>
+
+        <Reveal className="creator-body" delay={80}>
+          <div className="creator-card">
+            <div className="creator-photo-section">
+              <div className="creator-photo-wrap">
+                <img src="/bharath-founder.jpg" alt="Bharath Kumar KCS" className="creator-photo" />
+              </div>
+              <p className="creator-photo-caption">Bharath Kumar KCS</p>
+            </div>
+
+            <div className="creator-info">
+              <div className="creator-section-box creator-section-box-first">
+                <h4>Education</h4>
+                <div className="creator-item">
+                  <div className="creator-degree">PGDM — General Management</div>
+                  <div className="creator-school">XLRI Jamshedpur <span className="creator-year">2025 – 2026</span></div>
+                </div>
+                <div className="creator-item">
+                  <div className="creator-degree">B.Tech — Computer Science & Engineering</div>
+                  <div className="creator-school">SASTRA Deemed University <span className="creator-year">2017 – 2021</span></div>
+                </div>
+              </div>
+
+              <div className="creator-section-box">
+                <h4>Professional Experience</h4>
+                <div className="creator-item">
+                  <div className="creator-role">Advanced Application Engineering Analyst</div>
+                  <div className="creator-company">Accenture · Apr 2022 – Apr 2025</div>
+                  <div className="creator-desc">Product Owner for ML & Conversational AI platforms; delivered $2.1M ROI, optimized anomaly detection (18% → 6% false positives), reduced response time 45min → 8min, and built GenAI RAG POC.</div>
+                </div>
+                <div className="creator-item">
+                  <div className="creator-role">Technical Support Specialist</div>
+                  <div className="creator-company">ADP · Jul 2021 – Mar 2022</div>
+                  <div className="creator-desc">Drove HRMS product improvement across 11 enterprise clients; boosted feature adoption 34%, reduced downtime 30%, and achieved 96.4% stakeholder satisfaction.</div>
+                </div>
+              </div>
+
+              <p className="creator-vision">
+                This platform automatically identifies supply chain disruptions affecting your suppliers, pinpoints their geographic locations, and alerts you instantly. It analyzes impact across your entire network and provides ranked recommendations on what actions to take — all within 90 seconds. Human judgment remains central; every decision is yours to approve.
+              </p>
+            </div>
+          </div>
+        </Reveal>
+      </div>
+    </section>
+  )
+}
+
 function Footer({ onDemoClick }) {
   return (
     <footer className="lp-footer">
@@ -642,13 +735,13 @@ export default function Landing() {
       <TrustBar />
       <ProblemSection />
       <SolutionSection />
-      <FeaturesSection />
+
       <CapabilitiesSection />
-      <IndustryCasesSection />
-      <SurveyBannerSection />
+
       <PricingSection onSignupClick={onSignupClick} onDemoClick={onDemoClick} />
       <FAQSection />
-      <FinalCTASection onDemoClick={onDemoClick} onSignupClick={onSignupClick} />
+
+      <CreatorSection />
       <Footer onDemoClick={onDemoClick} />
     </div>
   )
