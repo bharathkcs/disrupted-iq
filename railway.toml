@@ -2,12 +2,12 @@
 builder = "nixpacks"
 
 [build.nixpacks]
-# Explicit Python version
+# Deploying from the repo root: install Python deps via root requirements.txt,
+# then start the wrapper that changes into Swarm Agent/backend.
 providers = ["python"]
 
 [env]
-# Python path needs to include backend directory
 PYTHONPATH = "/app"
 
 [start]
-cmd = "python main.py"
+cmd = "python run.py"
