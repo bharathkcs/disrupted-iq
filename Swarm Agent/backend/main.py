@@ -779,7 +779,7 @@ async def weekly_digest_loop():
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    global news_polling_task, openmeteo_polling_task, weekly_digest_task, daily_briefing_task, _tracer, _telemetry_logger, premium_requests_db
+    global news_polling_task, openmeteo_polling_task, weekly_digest_task, daily_briefing_task, premium_requests_db
     # Wire the live sessions_db into auth so require_auth can do JTI revocation
     # checks without a circular import.  Must run before any request is served.
     auth.set_sessions_store(sessions_db)

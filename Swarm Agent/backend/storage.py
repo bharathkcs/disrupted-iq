@@ -88,7 +88,7 @@ def _get_cosmos():
         from azure.cosmos import CosmosClient, PartitionKey
         _cosmos_client = CosmosClient(config.COSMOS_ENDPOINT, credential=config.COSMOS_KEY)
         _cosmos_db = _cosmos_client.create_database_if_not_exists(id=config.COSMOS_DATABASE)
-        for name in [config.COSMOS_CONTAINER_MEMORY, config.COSMOS_CONTAINER_AUDIT, config.COSMOS_CONTAINER_EVENTS]:
+        for name in [config.COSMOS_CONTAINER_MEMORY, config.COSMOS_CONTAINER_AUDIT, config.COSMOS_CONTAINER_EVENTS, config.COSMOS_CONTAINER_CF]:
             _cosmos_containers[name] = _get_or_create_container(_cosmos_db, PartitionKey, name)
         for name in [config.COSMOS_CONTAINER_PREMIUM, config.COSMOS_CONTAINER_SUPPORT, config.COSMOS_CONTAINER_FEEDBACK]:
             try:
