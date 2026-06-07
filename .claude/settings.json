@@ -1,0 +1,38 @@
+{
+  "enabledPlugins": {
+    "ecc@ecc": true
+  },
+  "permissions": {
+    "allow": [],
+    "deny": [
+      "Bash(sudo *)",
+      "Bash(ssh *)",
+      "Bash(chmod 777 *)",
+      "Bash(* > /dev/*)",
+      "Bash(rm -rf *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pwsh -File E:\\Swarm\\.claude\\security-check.ps1"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pwsh -Command \"Write-Host 'Session ended. Reminder: check for uncommitted secrets or debug output before pushing.'\""
+          }
+        ]
+      }
+    ]
+  }
+}

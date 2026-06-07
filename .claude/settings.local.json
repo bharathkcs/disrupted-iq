@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl http://localhost:8000/health)",
+      "Bash(node scripts/test-feedback.js)",
+      "Bash(jq .)"
+    ],
+    "deny": [
+      "Bash(sudo *)",
+      "Bash(ssh *)",
+      "Bash(chmod 777 *)",
+      "Bash(* > /dev/*)",
+      "Bash(del /f /s /q *)",
+      "Bash(rm -rf *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pwsh -File E:\\Swarm\\.claude\\security-check.ps1"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pwsh -Command \"Write-Host 'Session ended. Reminder: check for uncommitted secrets or debug output before pushing.'\""
+          }
+        ]
+      }
+    ]
+  }
+}
