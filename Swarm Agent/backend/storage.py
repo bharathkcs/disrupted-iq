@@ -86,31 +86,44 @@ def _get_cosmos():
         return _cosmos_containers
     try:
         from azure.cosmos import CosmosClient, PartitionKey
-        _cosmos_client = CosmosClient(config.COSMOS_ENDPOINT, credential=config.COSMOS_KEY)
+        # Short per-request timeout so a failing Cosmos never blocks startup for 40+ seconds.
+        _cosmos_client = CosmosClient(
+            config.COSMOS_ENDPOINT,
+            credential=config.COSMOS_KEY,
+            connection_timeout=5,
+            timeout=10,
+        )
         _cosmos_db = _cosmos_client.create_database_if_not_exists(id=config.COSMOS_DATABASE)
-        for name in [config.COSMOS_CONTAINER_MEMORY, config.COSMOS_CONTAINER_AUDIT, config.COSMOS_CONTAINER_EVENTS]:
-            _cosmos_containers[name] = _get_or_create_container(_cosmos_db, PartitionKey, name)
-        for name in [config.COSMOS_CONTAINER_PREMIUM, config.COSMOS_CONTAINER_SUPPORT, config.COSMOS_CONTAINER_FEEDBACK, config.COSMOS_CONTAINER_CF]:
+        # All containers use the same graceful pattern: read if exists, create only
+        # when truly absent. A throughput-limit error on creation is logged and skipped
+        # rather than crashing the whole init — the app uses in-memory for that container.
+        for name, pk_path in [
+            (config.COSMOS_CONTAINER_MEMORY, "/event_id"),
+            (config.COSMOS_CONTAINER_AUDIT, "/event_id"),
+            (config.COSMOS_CONTAINER_EVENTS, "/event_id"),
+            (config.COSMOS_CONTAINER_PREMIUM, "/id"),
+            (config.COSMOS_CONTAINER_SUPPORT, "/id"),
+            (config.COSMOS_CONTAINER_FEEDBACK, "/id"),
+            (config.COSMOS_CONTAINER_CF, "/id"),
+        ]:
             try:
-                c = _cosmos_db.get_container_client(name)
-                c.read()
-                _cosmos_containers[name] = c
-            except Exception:
-                try:
-                    _cosmos_containers[name] = _cosmos_db.create_container_if_not_exists(
-                        id=name, partition_key=PartitionKey(path="/id"))
-                except Exception as ce:
-                    logger.warning("Could not init optional container %s (skipping): %s", name, ce)
+                _cosmos_containers[name] = _get_or_create_container(
+                    _cosmos_db, PartitionKey, name, pk_path
+                )
+            except Exception as ce:
+                logger.warning("Cosmos container %s unavailable (skipping): %s", name, ce)
+
+        if config.COSMOS_CONTAINER_MEMORY not in _cosmos_containers:
+            raise RuntimeError("Core memory container could not be initialised; falling back to in-memory.")
+
         # Seed memory + stage-2 memory on first run (for R-05/R-09 data)
         try:
             existing = list(_cosmos_containers[config.COSMOS_CONTAINER_MEMORY].read_all_items(max_item_count=1))
             if not existing:
-                # Seed Stage-1 memory (original SEED_MEMORY)
                 for rec in SEED_MEMORY:
                     _cosmos_containers[config.COSMOS_CONTAINER_MEMORY].create_item(
                         body={**rec, "id": rec["memory_id"]}
                     )
-                # Seed Stage-2 memory (resolved events for R-09 data)
                 for rec in SEED_STAGE2_MEMORY:
                     _cosmos_containers[config.COSMOS_CONTAINER_MEMORY].create_item(
                         body={**rec, "id": rec["memory_id"]}
@@ -120,14 +133,16 @@ def _get_cosmos():
 
         # Seed counterfactuals on first run (for R-05 data)
         try:
-            existing_cf = list(_cosmos_containers[config.COSMOS_CONTAINER_CF].read_all_items(max_item_count=1))
-            if not existing_cf:
-                for rec in SEED_COUNTERFACTUALS:
-                    _cosmos_containers[config.COSMOS_CONTAINER_CF].create_item(
-                        body={**rec, "id": rec["counterfactual_id"]}
-                    )
+            if config.COSMOS_CONTAINER_CF in _cosmos_containers:
+                existing_cf = list(_cosmos_containers[config.COSMOS_CONTAINER_CF].read_all_items(max_item_count=1))
+                if not existing_cf:
+                    for rec in SEED_COUNTERFACTUALS:
+                        _cosmos_containers[config.COSMOS_CONTAINER_CF].create_item(
+                            body={**rec, "id": rec["counterfactual_id"]}
+                        )
         except Exception as e:
             logger.error("Cosmos counterfactuals seed write failed: %s: %s", type(e).__name__, e, exc_info=True)
+
         _cosmos_health["status"] = "healthy"
         _cosmos_health["last_error"] = None
         return _cosmos_containers
@@ -139,16 +154,17 @@ def _get_cosmos():
         return None
 
 
-def _get_or_create_container(db, partition_key_cls, name: str):
-    """Prefer existing containers; never request dedicated throughput so constrained accounts aren't pushed over their RU/s cap."""
+def _get_or_create_container(db, partition_key_cls, name: str, pk_path: str = "/event_id"):
+    """Read existing container or create it. Only catches NotFound — transient errors propagate."""
+    from azure.cosmos.exceptions import CosmosResourceNotFoundError
     try:
         container = db.get_container_client(name)
         container.read()
         return container
-    except Exception:
+    except CosmosResourceNotFoundError:
         return db.create_container_if_not_exists(
             id=name,
-            partition_key=partition_key_cls(path="/event_id"),
+            partition_key=partition_key_cls(path=pk_path),
         )
 
 
